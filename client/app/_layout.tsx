@@ -1,9 +1,12 @@
 import { Stack } from "expo-router";
-import "./global.css"
-export default function RootLayout() {
-  return <Stack >;
+import "./global.css";
 
-  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-  <Stack.Screen name="/task/[id]" options={{ title: 'Task Details', headerShown: false }} />
-</Stack>
+export default function RootLayout() {
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="(pages)" />
+      <Stack.Screen name="task/[id]" />
+    </Stack>
+  );
 }
