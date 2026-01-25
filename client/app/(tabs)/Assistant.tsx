@@ -3,8 +3,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { Animated } from 'react-native';
 import * as Speech from 'expo-speech';
-import * as SpeechRecognition from 'expo-speech-recognition';
+import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import axios from 'axios';
+
+import { Config } from '../../constants/Config';
 
 export default function Assistant() {
   const [listening, setListening] = useState(false);
@@ -52,38 +54,57 @@ export default function Assistant() {
     }
   }, [listening]);
 
+  /* ================= SPEECH RECOGNITION EVENTS ================= */
+  useSpeechRecognitionEvent('start', () => setListening(true));
+  useSpeechRecognitionEvent('end', () => {
+    setListening(false);
+    setProcessing(false);
+  });
+
+  useSpeechRecognitionEvent('result', (event) => {
+    const transcript = event.results[0]?.transcript;
+    if (transcript) {
+      setUserText(transcript);
+      setProcessing(true);
+      sendToAI(transcript);
+    }
+  });
+
+  useSpeechRecognitionEvent('error', (event) => {
+    console.log('Speech recognition error:', event.error, event.message);
+    setListening(false);
+    setProcessing(false);
+  });
+
   /* ================= SPEECH → TEXT ================= */
   const startListening = async () => {
     setAiText('');
     setUserText('');
-    setListening(true);
 
-    await (SpeechRecognition as any).startAsync({
-      language: 'en-US',
+    // Request permissions
+    const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!result.granted) {
+      console.warn('Permissions not granted', result);
+      return;
+    }
+
+    // Start speech recognition
+    ExpoSpeechRecognitionModule.start({
+      lang: 'en-US',
       interimResults: false,
+      continuous: false,
     });
   };
 
-  const stopListening = async () => {
-    setListening(false);
-    setProcessing(true);
-
-    const result = await (SpeechRecognition as any).stopAsync();
-
-    if (result?.results?.length > 0) {
-      const text = result.results[0].transcript;
-      setUserText(text);
-      sendToAI(text);
-    } else {
-      setProcessing(false);
-    }
+  const stopListening = () => {
+    ExpoSpeechRecognitionModule.stop();
   };
 
   /* ================= AI API CALL ================= */
   const sendToAI = async (message: string) => {
     try {
       const response = await axios.post(
-        'http://192.168.0.108:5000/api/generate/ai/response',
+        `${Config.API_URL}/api/generate/ai/response`,
         { prompt: message }
       );
 
@@ -114,7 +135,7 @@ export default function Assistant() {
 
   return (
     <View className="flex-1 bg-black items-center justify-center px-6">
-      
+
       {/* TITLE */}
       <Text className="text-white text-3xl font-bold mb-1">
         AI Assistant
@@ -138,9 +159,8 @@ export default function Assistant() {
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={listening ? stopListening : startListening}
-        className={`w-36 h-36 rounded-full items-center justify-center shadow-2xl ${
-          listening ? 'bg-blue-600' : 'bg-gray-800'
-        }`}
+        className={`w-36 h-36 rounded-full items-center justify-center shadow-2xl ${listening ? 'bg-blue-600' : 'bg-gray-800'
+          }`}
       >
         {processing ? (
           <ActivityIndicator size="large" color="white" />
@@ -158,8 +178,8 @@ export default function Assistant() {
         {listening
           ? 'Listening...'
           : processing
-          ? 'Thinking...'
-          : 'Tap to Speak'}
+            ? 'Thinking...'
+            : 'Tap to Speak'}
       </Text>
 
       {/* TRANSCRIPTS */}

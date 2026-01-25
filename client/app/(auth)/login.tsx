@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { saveToken } from '../utils/token';
 import axios from 'axios';
 
+import { Config } from '../../constants/Config';
+
 export default function Login() {
   const router = useRouter();
 
@@ -22,7 +24,7 @@ export default function Login() {
       setLoading(true);
 
       const response = await axios.post(
-        'http://192.168.0.108:5000/api/users/login',
+        `${Config.API_URL}/api/users/login`,
         {
           email,
           password,
@@ -30,7 +32,7 @@ export default function Login() {
       );
 
       // Backend should return token + user
-      const { token, email:userEmail } = response.data;
+      const { token, email: userEmail } = response.data;
 
 
 
@@ -38,7 +40,7 @@ export default function Login() {
 
       // 🔒 JWT storage (we will improve this next)
       await saveToken(token, response.data.username);
-    
+
       // For now just redirect
       router.replace('/(tabs)');
     } catch (error: any) {
@@ -54,7 +56,7 @@ export default function Login() {
 
   return (
     <View className="flex-1 bg-gray-900 px-6 justify-center">
-      
+
       {/* TITLE */}
       <Text className="text-white text-3xl font-bold">
         Welcome Back 👋
@@ -94,9 +96,8 @@ export default function Login() {
       <TouchableOpacity
         onPress={handleLogin}
         disabled={loading}
-        className={`py-4 rounded-2xl ${
-          loading ? 'bg-blue-400' : 'bg-blue-500'
-        }`}
+        className={`py-4 rounded-2xl ${loading ? 'bg-blue-400' : 'bg-blue-500'
+          }`}
       >
         <Text className="text-white text-center font-semibold text-lg">
           {loading ? 'Logging in...' : 'Login'}

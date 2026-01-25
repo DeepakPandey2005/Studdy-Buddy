@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import axios from 'axios';
 
+import { Config } from '../../constants/Config';
+
 export default function Register() {
   const router = useRouter();
 
@@ -22,7 +24,7 @@ export default function Register() {
       setLoading(true);
 
       const response = await axios.post(
-        'http://192.168.0.108:5000/api/users/register',
+        `${Config.API_URL}/api/users/register`,
         {
           username: name,
           email,
@@ -47,7 +49,7 @@ export default function Register() {
 
   return (
     <View className="flex-1 bg-gray-900 px-6 justify-center">
-      
+
       {/* TITLE */}
       <Text className="text-white text-3xl font-bold">
         Create Account 🚀
@@ -99,9 +101,8 @@ export default function Register() {
       <TouchableOpacity
         onPress={handleRegister}
         disabled={loading}
-        className={`py-4 rounded-2xl ${
-          loading ? 'bg-green-400' : 'bg-green-500'
-        }`}
+        className={`py-4 rounded-2xl ${loading ? 'bg-green-400' : 'bg-green-500'
+          }`}
       >
         <Text className="text-white text-center font-semibold text-lg">
           {loading ? 'Creating Account...' : 'Register'}

@@ -22,3 +22,12 @@ export const removeUsername = async () => {
 export const removeToken = async () => {
   await SecureStore.deleteItemAsync(TOKEN_KEY);
 };
+
+// Default export for Expo Router compatibility
+export default {
+  saveToken,
+  getToken,
+  getUser,
+  removeUsername,
+  removeToken,
+};
