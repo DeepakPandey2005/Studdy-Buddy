@@ -1,39 +1,27 @@
-import { Config } from "@/constants/Config";
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
-import { getToken } from "../../utils/token";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/app/store";
+import { fetchTasks } from "@/app/store/tasksSlice";
 
 export default function Roadmap() {
   const { id } = useLocalSearchParams();
   const [task, setTask] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const tasks = useSelector((state: RootState) => state.tasks.list) as any[];
 
+ 
+  // use task from redux store instead of fetching manually
   useEffect(() => {
-    const fetchTask = async () => {
-      try {
-        const token = await getToken();
+    if (!id) return;
+    const selected = tasks.find((t: any) => t._id === id);
+    if (selected) setTask(selected);
+    setLoading(false);
+  }, [id, tasks]);
 
-        const res = await axios.get(`${Config.API_URL}/api/tasks/get`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
 
-        const selectedTask = res.data.find((t: any) => t._id === id);
-
-        setTask(selectedTask);
-      } catch (error) {
-        console.log("ROADMAP FETCH ERROR:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTask();
-  }, [id]);
 
   if (loading) {
     return (

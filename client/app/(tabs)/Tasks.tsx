@@ -10,6 +10,9 @@ import {
   View,
 } from "react-native";
 import { getToken } from "../utils/token";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../store";
+import { fetchTasks } from "../store/tasksSlice";
 
 type Task = {
   _id: string;
@@ -25,33 +28,22 @@ export default function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  
+  const dispatch = useDispatch<AppDispatch>();
+  const allTasks = useSelector((state: RootState) => state.tasks.list) as any[];
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const token = await getToken();
-        const axios = (await import("axios")).default;
-        const res = await axios.get(`${Config.API_URL}/api/tasks/get`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const json = res.data;
-        const fetched: Task[] = Array.isArray(json)
-          ? json
-          : (json.tasks ?? json.data ?? []);
-        if (mounted) setTasks(fetched);
-      } catch (err: any) {
-        if (mounted) setError(err?.message ?? "Failed to fetch tasks");
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    dispatch(fetchTasks());
+  }, [dispatch]);
+
+  // use task from redux store instead of fetching manually
+  useEffect(() => {
+    if (!allTasks) return;
+    setTasks(allTasks);
+    setLoading(false);
+  }, [ allTasks]);
+
 
   const getStatusColor = (status?: string) => {
     const s = (status ?? "").toLowerCase();

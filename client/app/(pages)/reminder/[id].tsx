@@ -1,12 +1,12 @@
-import { getToken } from "@/app/utils/token";
-import { Config } from "@/constants/Config";
+import { AppDispatch, RootState } from "@/app/store";
+import { fetchTasks } from "@/app/store/tasksSlice";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import axios from "axios";
 import * as Notifications from "expo-notifications";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 
 // 🔔 Notification behavior
 Notifications.setNotificationHandler({
@@ -26,24 +26,15 @@ export default function Reminder() {
   const [time, setTime] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
 
-  // 📥 Fetch task
+  const tasks = useSelector((state: RootState) => state.tasks.list) as any[];
+
+
+  // use task from redux store instead of fetching manually
   useEffect(() => {
-    const fetchTask = async () => {
-      try {
-        const token = await getToken();
-        const res = await axios.get(`${Config.API_URL}/api/tasks/get`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const selected = res.data.find((t: any) => t._id === id);
-        setTask(selected);
-      } catch (err) {
-        console.log("TASK FETCH ERROR:", err);
-      }
-    };
-
-    fetchTask();
-  }, [id]);
+    if (!id) return;
+    const selected = tasks.find((t: any) => t._id === id);
+    if (selected) setTask(selected);
+  }, [id, tasks]);
 
   // ⏰ Time picker handler
   const onTimeChange = (_: any, selectedTime?: Date) => {
@@ -100,9 +91,7 @@ export default function Reminder() {
   return (
     <View className="flex-1 bg-gray-900 px-5 pt-6">
       {/* HEADER */}
-      <Text className="text-white text-3xl font-bold mb-2">
-        Set Reminder ⏰
-      </Text>
+      <Text className="text-white text-3xl font-bold mb-2">Set Reminder ⏰</Text>
       <Text className="text-gray-400 mb-6">{task.title}</Text>
 
       {/* TIME CARD */}
