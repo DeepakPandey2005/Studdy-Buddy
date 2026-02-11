@@ -1,10 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@/app/store";
-import { fetchTasks } from "@/app/store/tasksSlice";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import {  useSelector } from "react-redux";
+import {  RootState } from "@/app/store";
 
 export default function Roadmap() {
   const { id } = useLocalSearchParams();
@@ -103,10 +102,12 @@ export default function Roadmap() {
                     : "bg-gray-800"
               }`}
             >
-              <Text className="text-white font-semibold text-lg">
-                Step {index + 1}
-              </Text>
-              <Text className="text-gray-400 mt-1">{step.title}</Text>
+              <Pressable onPress={() => router.push(`/roadmap/step/${step._id}`)}>
+                <Text className="text-white font-semibold text-lg">
+                  Step {index + 1}
+                </Text>
+                <Text className="text-gray-400 mt-1">{step.title}</Text>
+              </Pressable>
             </View>
           </View>
         );

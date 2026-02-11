@@ -1,8 +1,9 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
-import { getToken } from "../utils/token";
+import { getToken } from "@/app/utils/token";
 import { Config } from "@/constants/Config";
 
+/* -------------------- ASYNC THUNK -------------------- */
 export const fetchTasks = createAsyncThunk(
   "tasks/fetchTasks",
   async () => {
@@ -17,13 +18,27 @@ export const fetchTasks = createAsyncThunk(
   }
 );
 
+/* -------------------- SLICE -------------------- */
 const tasksSlice = createSlice({
   name: "tasks",
   initialState: {
     list: [],
     loading: false,
   },
-  reducers: {},
+  reducers: {
+    // ✅ THIS IS markStepDone
+    markStepDone: (state, action) => {
+      const stepId = action.payload;
+
+      for (const task of state.list) {
+        const step = task.steps.find(s => s._id === stepId);
+        if (step) {
+          step.isDone = true;
+          break;
+        }
+      }
+    },
+  },
   extraReducers: builder => {
     builder
       .addCase(fetchTasks.pending, state => {
@@ -39,4 +54,5 @@ const tasksSlice = createSlice({
   },
 });
 
+export const { markStepDone } = tasksSlice.actions;
 export default tasksSlice.reducer;
