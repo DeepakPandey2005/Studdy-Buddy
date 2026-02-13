@@ -1,20 +1,20 @@
-# 1️⃣ Fix Node version
-FROM node:20
+# 1️⃣ Use Alpine for better compatibility and smaller size
+FROM node:20-alpine
 
-# 2️⃣ Container ke andar folder
+# 2️⃣ Set working directory
 WORKDIR /app
 
-# 3️⃣ Dependency files copy
+# 3️⃣ Copy dependency files
 COPY package*.json ./
 
-# 4️⃣ Dependencies install (ioredis yahin install hota hai)
+# 4️⃣ Install dependencies
 RUN npm install
 
-# 5️⃣ Backend code copy
+# 5️⃣ Copy the rest of the code
 COPY . .
 
-# 6️⃣ Port expose
+# 6️⃣ Expose port
 EXPOSE 5000
 
-# 7️⃣ App start
+# 7️⃣ Start the application
 CMD ["npm", "start"]

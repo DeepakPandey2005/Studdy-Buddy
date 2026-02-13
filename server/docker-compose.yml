@@ -8,6 +8,8 @@ services:
       - "5000:5000"
     env_file:
       - .env
+    environment:
+      - REDIS_HOST=redis-stack
     depends_on:
       - redis-stack
 
@@ -16,4 +18,4 @@ services:
     container_name: redis-stack
     ports:
       - "6379:6379"
-      - "8001:8001"   # RedisInsight UI
+      - "8001:8001" # RedisInsight UI

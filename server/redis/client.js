@@ -8,4 +8,8 @@ const redis = new ioredis({
 redis.on("connect", () => {
   console.log("Redis connected");
 });
+
+redis.on("error", (err) => {
+  console.error("Redis connection error:", err);
+});
 module.exports = redis;
