@@ -64,17 +64,18 @@ Create exactly 5 multiple choice questions for the topic:
 
 Rules:
 - Each question must have 4 options
-- One correct answer
+- The "answer" field MUST be the EXACT STRING matching one of the options.
+- DO NOT use labels like "A", "B", "C", "D" or indexes in the "answer" field. It must be the text of the correct option itself.
 - Return ONLY valid JSON
-- No markdown
+- No markdown formatting or extra text.
 
 Format:
 {
   "mcqs": [
     {
       "question": "Question?",
-      "options": ["A", "B", "C", "D"],
-      "answer": "A"
+      "options": ["Option 1 Text", "Option 2 Text", "Option 3 Text", "Option 4 Text"],
+      "answer": "Option 1 Text"
     }
   ]
 }
@@ -90,28 +91,32 @@ Format:
       }
     );
 
-    // const content = response.data.choices[0].message.content;
-    let parsed = response.data.content;
-    console.log(response)
-     while (typeof parsed === "string") {
-    parsed = JSON.parse(parsed);
-  }
+    const content = response.data.choices[0].message.content;
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (e) {
+      // Handle cases where AI might include markdown or extra text
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("Could not parse AI response as JSON");
+      }
+    }
 
+    // 🧠 3. Save to Redis (24 hrs)
+    await redis.set(
+      cacheKey,
+      JSON.stringify(parsed),
+      "EX",
+      60 * 60 * 24
+    );
 
-  // 🧠 3. Save to Redis (24 hrs)
-  await redis.set(
-    cacheKey,
-    JSON.stringify(parsed),
-    "EX",
-    60 * 60 * 24
-  );
-
-  res.json(parsed);
+    return res.json(parsed);
   } catch (err) {
-    console.error(err.response?.data || err.message);
-    return res.json(JSON.stringify({ error: "AI failed" }), {
-      status: 500,
-    });
+    console.error("MCQ GENERATION ERROR:", err.response?.data || err.message);
+    return res.status(500).json({ error: "AI failed to generate MCQs" });
   }
 
  

@@ -4,12 +4,13 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
+  Image,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { getToken } from "../utils/token";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../store";
 import { fetchTasks } from "../store/tasksSlice";
@@ -21,6 +22,8 @@ type Task = {
   status?: string;
   dueDate?: string;
   createdAt?: string;
+  isCompleted?: boolean;
+  steps?: any[];
 };
 
 export default function Tasks() {
@@ -28,8 +31,7 @@ export default function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  
+
   const dispatch = useDispatch<AppDispatch>();
   const allTasks = useSelector((state: RootState) => state.tasks.list) as any[];
 
@@ -37,118 +39,138 @@ export default function Tasks() {
     dispatch(fetchTasks());
   }, [dispatch]);
 
-  // use task from redux store instead of fetching manually
   useEffect(() => {
+    // Cast to Task[] for local state
     if (!allTasks) return;
     setTasks(allTasks);
     setLoading(false);
-  }, [ allTasks]);
+  }, [allTasks]);
 
-
-  const getStatusColor = (status?: string) => {
-    const s = (status ?? "").toLowerCase();
-    if (s.includes("complete")) return "bg-green-500";
-    if (s.includes("progress")) return "bg-yellow-500";
-    return "bg-red-500";
+  const getStatusColor = (isCompleted?: boolean) => {
+    if (isCompleted) return "text-emerald-400";
+    return "text-indigo-400";
   };
 
-  const getStatusLabel = (status?: string) => {
-    const s = (status ?? "").toLowerCase();
-    if (s.includes("complete")) return "Completed";
-    if (s.includes("progress")) return "In Progress";
-    if (s === "pending" || s === "") return "Pending";
-    // fallback: capitalize first letter
-    return status ? status[0].toUpperCase() + status.slice(1) : "Pending";
-  };
+  const getStatusBg = (isCompleted?: boolean) => {
+    if (isCompleted) return "bg-emerald-500/10 border-emerald-500/20";
+    return "bg-indigo-500/10 border-indigo-500/20";
+  }
+
+  const getProgress = (task: Task) => {
+    if (!task.steps || task.steps.length === 0) return 0;
+    const done = task.steps.filter((s: any) => s.isDone).length;
+    return Math.round((done / task.steps.length) * 100);
+  }
 
   return (
-    <View className="flex-1 bg-gray-900 px-4 pt-6">
-      <View className="mb-6">
-        <Text className="text-3xl font-bold text-white">Tasks 📋</Text>
-        <Text className="text-gray-400 mt-1">
-          Plan your study tasks efficiently
-        </Text>
+    <View className="flex-1 bg-gray-950">
+      {/* HEADER BACKGROUND ACCENT */}
+      <View className="absolute top-0 left-0 right-0 h-32 bg-indigo-900/10 rounded-b-[40px]" />
+
+      <View className="px-6 pt-12">
+        <View className="flex-row justify-between items-center mb-6">
+          <View>
+            <Text className="text-3xl font-bold text-white">My Tasks ⚡</Text>
+            <Text className="text-gray-400 mt-1 text-sm font-medium">
+              Manage your learning path
+            </Text>
+          </View>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.push("/(pages)/createTask")}
+            className="w-12 h-12 bg-indigo-600 rounded-full items-center justify-center shadow-lg shadow-indigo-500/40"
+          >
+            <Ionicons name="add" size={28} color="white" />
+          </TouchableOpacity>
+        </View>
+
+        {loading ? (
+          <View className="flex-1 items-center justify-center mt-20">
+            <ActivityIndicator size="large" color="#6366f1" />
+          </View>
+        ) : error ? (
+          <View className="items-center mt-20">
+            <Text className="text-red-400">{error}</Text>
+          </View>
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+            {tasks.length === 0 ? (
+              <View className="items-center justify-center mt-20 opacity-50">
+                <Ionicons name="document-text-outline" size={64} color="gray" />
+                <Text className="text-gray-500 mt-4">No tasks found. Create one to get started!</Text>
+              </View>
+            ) : (
+              tasks.map((task) => {
+                const progress = getProgress(task);
+                return (
+                  <TouchableOpacity
+                    key={task._id}
+                    activeOpacity={0.9}
+                    onPress={() => router.push({ pathname: "/(pages)/reminder/[id]", params: { id: task._id } })}
+                    className="bg-gray-900/80 border border-gray-800 rounded-2xl p-5 mb-4 shadow-sm"
+                  >
+                    <View className="flex-row justify-between items-start mb-3">
+                      <View className="flex-1 pr-4">
+                        <Text className="text-white text-lg font-bold mb-1" numberOfLines={1}>
+                          {task.title}
+                        </Text>
+                        <Text className="text-gray-500 text-xs font-medium uppercase tracking-wide">
+                          {task.isCompleted ? 'Completed' : 'In Progress'}
+                        </Text>
+                      </View>
+
+                      <View
+                        className={`px-3 py-1 rounded-full border ${getStatusBg(task.isCompleted)}`}
+                      >
+                        <Text className={`text-xs font-bold ${getStatusColor(task.isCompleted)}`}>
+                          {progress}%
+                        </Text>
+                      </View>
+                    </View>
+
+                    {task.description ? (
+                      <Text className="text-gray-400 text-sm mb-4 leading-5" numberOfLines={2}>
+                        {task.description}
+                      </Text>
+                    ) : null}
+
+                    <View className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mb-4">
+                      <View
+                        style={{ width: `${progress}%` }}
+                        className={`h-full ${task.isCompleted ? 'bg-emerald-500' : 'bg-indigo-500'} rounded-full`}
+                      />
+                    </View>
+
+                    <View className="flex-row justify-between items-center pt-2 border-t border-gray-800/50">
+                      {task.dueDate ? (
+                        <View className="flex-row items-center">
+                          <Ionicons name="calendar-outline" size={14} color="#6b7280" />
+                          <Text className="text-gray-500 text-xs ml-1.5">
+                            {new Date(task.dueDate).toLocaleDateString()}
+                          </Text>
+                        </View>
+                      ) : (
+                        <View className="flex-row items-center">
+                          <Ionicons name="time-outline" size={14} color="#6b7280" />
+                          <Text className="text-gray-500 text-xs ml-1.5">No Due Date</Text>
+                        </View>
+                      )}
+
+                      <TouchableOpacity
+                        className="flex-row items-center"
+                        onPress={() => router.push({ pathname: "/(pages)/roadmap/[id]", params: { id: task._id } })}
+                      >
+                        <Text className="text-indigo-400 text-sm font-semibold mr-1">Roadmap</Text>
+                        <Ionicons name="arrow-forward" size={14} color="#818cf8" />
+                      </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+            )}
+          </ScrollView>
+        )}
       </View>
-
-      <TouchableOpacity
-        className="bg-blue-500 rounded-2xl p-4 flex-row items-center justify-center mb-6"
-        onPress={() => router.push("/(pages)/createTask")}
-      >
-        <Ionicons name="add-circle-outline" size={24} color="white" />
-        <Text className="text-white text-lg font-semibold ml-2">
-          Create New Task
-        </Text>
-      </TouchableOpacity>
-
-      {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#fff" />
-        </View>
-      ) : error ? (
-        <View className="items-center">
-          <Text className="text-red-400">{error}</Text>
-        </View>
-      ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {tasks.map((task) => (
-            <View key={task._id} className="bg-gray-800 rounded-2xl p-4 mb-4">
-              <View className="flex-row justify-between items-center mb-2">
-                <Text className="text-white text-lg font-semibold">
-                  {task.title}
-                </Text>
-
-                <View
-                  className={`px-3 py-1 rounded-full ${getStatusColor(task.status)}`}
-                >
-                  <Text className="text-xs font-bold text-black">
-                    {getStatusLabel(task.status)}
-                  </Text>
-                </View>
-              </View>
-
-              <Text className="text-gray-400">{task.description}</Text>
-
-              {task.dueDate ? (
-                <Text className="text-gray-400 mt-2">
-                  Due: {new Date(task.dueDate).toLocaleDateString()}
-                </Text>
-              ) : null}
-
-              <View className="flex-row justify-end mt-3">
-                <TouchableOpacity
-                  className="bg-indigo-500 px-3 py-2 rounded-full flex-row items-center mr-2"
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(pages)/reminder/[id]",
-                      params: { id: task._id },
-                    })
-                  }
-                >
-                  <Ionicons name="alarm-outline" size={16} color="white" />
-                  <Text className="text-white text-sm font-semibold ml-2">
-                    Set Reminder
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  className="bg-green-600 px-3 py-2 rounded-full flex-row items-center"
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(pages)/roadmap/[id]",
-                      params: { id: task._id },
-                    })
-                  }
-                >
-                  <Ionicons name="eye-outline" size={16} color="white" />
-                  <Text className="text-white text-sm font-semibold ml-2">
-                    View
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
-      )}
     </View>
   );
 }

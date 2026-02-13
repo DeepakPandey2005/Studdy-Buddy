@@ -131,3 +131,29 @@ exports.getTasks = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.markStepDone = async (req, res) => {
+  try {
+    const { stepId } = req.params;
+
+    // Find task containing this step and update it
+    const task = await Task.findOneAndUpdate(
+      { "steps._id": stepId },
+      { 
+        $set: { 
+          "steps.$.isDone": true,
+          "steps.$.completedAt": new Date()
+        } 
+      },
+      { new: true }
+    );
+    if (!task) {
+      return res.status(404).json({ error: "Step not found" });
+    }
+
+    res.json({ message: "Step marked as done", task });
+  } catch (error) {
+    console.error("MARK STEP DONE ERROR:", error);
+    res.status(500).json({ error: "Failed to update step" });
+  }
+};

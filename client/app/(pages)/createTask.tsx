@@ -1,7 +1,7 @@
 import { Config } from "@/constants/Config";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
-import { Redirect } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -10,11 +10,13 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  SafeAreaView
 } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { getToken } from "../utils/token";
 
 export default function CreateTask() {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState<Date | null>(null);
@@ -45,9 +47,9 @@ export default function CreateTask() {
         },
       );
 
-      Alert.alert("Success", "Task created successfully");
-
-      <Redirect href="/Tasks" />;
+      Alert.alert("Success", "Task created successfully", [
+        { text: "OK", onPress: () => router.push('/(tabs)/Tasks') }
+      ]);
 
       // reset form
       setTitle("");
@@ -64,74 +66,96 @@ export default function CreateTask() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-gray-900 px-5 pt-6">
-      {/* HEADER */}
-      <Text className="text-white text-3xl font-bold mb-2">Create Task 📝</Text>
-      <Text className="text-gray-400 mb-6">
-        Add a new task to stay consistent
-      </Text>
-
-      {/* TITLE */}
-      <Text className="text-gray-300 mb-2">Title</Text>
-      <View className="bg-gray-800 rounded-xl px-4 py-3 mb-5 flex-row items-center">
-        <Ionicons name="clipboard-outline" size={20} color="#9CA3AF" />
-        <TextInput
-          placeholder="Eg. Revise React Native"
-          placeholderTextColor="#9CA3AF"
-          className="text-white ml-3 flex-1"
-          value={title}
-          onChangeText={setTitle}
-        />
-      </View>
-
-      {/* DESCRIPTION */}
-      <Text className="text-gray-300 mb-2">Description</Text>
-      <View className="bg-gray-800 rounded-xl px-4 py-3 mb-5">
-        <TextInput
-          placeholder="What exactly will you do?"
-          placeholderTextColor="#9CA3AF"
-          className="text-white"
-          multiline
-          value={description}
-          onChangeText={setDescription}
-        />
-      </View>
-
-      {/* DUE DATE */}
-      <Text className="text-gray-300 mb-2">Due Date</Text>
-      <TouchableOpacity
-        onPress={() => setShowDatePicker(true)}
-        className="bg-gray-800 rounded-xl px-4 py-4 mb-8 flex-row items-center"
+    <SafeAreaView className="flex-1 bg-gray-950">
+      <ScrollView
+        className="flex-1 px-6 pt-8"
+        contentContainerStyle={{ paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
       >
-        <Ionicons name="calendar-outline" size={20} color="#9CA3AF" />
-        <Text className="text-white ml-3">
-          {dueDate ? dueDate.toDateString() : "Select due date"}
-        </Text>
-      </TouchableOpacity>
+        {/* HEADER */}
+        <View className="flex-row items-center mb-8">
+          <TouchableOpacity onPress={() => router.back()} className="mr-4 bg-gray-900 p-2 rounded-full border border-gray-800">
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <View>
+            <Text className="text-white text-2xl font-bold">New Goal 🎯</Text>
+            <Text className="text-gray-400 text-sm">Set your targets high</Text>
+          </View>
+        </View>
 
-      {/* DATE PICKER */}
-      <DateTimePickerModal
-        isVisible={showDatePicker}
-        mode="date"
-        onConfirm={(date) => {
-          setDueDate(date);
-          setShowDatePicker(false);
-        }}
-        onCancel={() => setShowDatePicker(false)}
-      />
+        {/* TITLE */}
+        <View className="mb-6">
+          <Text className="text-gray-400 mb-2 font-medium ml-1">Task Title</Text>
+          <View className="bg-gray-900 border border-gray-800 rounded-2xl px-4 py-4 flex-row items-center focus:border-indigo-500">
+            <Ionicons name="flag-outline" size={22} color="#6366f1" />
+            <TextInput
+              placeholder="E.g., Master Redux Toolkit"
+              placeholderTextColor="#64748b"
+              className="text-white ml-3 flex-1 text-base"
+              value={title}
+              onChangeText={setTitle}
+            />
+          </View>
+        </View>
 
-      {/* CREATE BUTTON */}
-      <TouchableOpacity
-        onPress={handleCreateTask}
-        disabled={loading}
-        className={`py-4 rounded-2xl ${
-          loading ? "bg-blue-400" : "bg-blue-500"
-        }`}
-      >
-        <Text className="text-white text-center font-semibold text-lg">
-          {loading ? "Creating..." : "Create Task"}
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {/* DESCRIPTION */}
+        <View className="mb-6">
+          <Text className="text-gray-400 mb-2 font-medium ml-1">Description</Text>
+          <View className="bg-gray-900 border border-gray-800 rounded-2xl px-4 py-3 align-top h-24">
+            <TextInput
+              placeholder="Add details about your task..."
+              placeholderTextColor="#64748b"
+              className="text-white text-base h-full"
+              multiline
+              textAlignVertical="top"
+              value={description}
+              onChangeText={setDescription}
+            />
+          </View>
+        </View>
+
+        {/* DUE DATE */}
+        <View className="mb-10">
+          <Text className="text-gray-400 mb-2 font-medium ml-1">Deadline</Text>
+          <TouchableOpacity
+            onPress={() => setShowDatePicker(true)}
+            activeOpacity={0.7}
+            className="bg-gray-900 border border-gray-800 rounded-2xl px-4 py-4 flex-row items-center justify-between"
+          >
+            <View className="flex-row items-center">
+              <Ionicons name="calendar-outline" size={22} color="#a855f7" />
+              <Text className={`ml-3 text-base ${dueDate ? 'text-white' : 'text-gray-500'}`}>
+                {dueDate ? dueDate.toDateString() : "Select a date"}
+              </Text>
+            </View>
+            <Ionicons name="chevron-down" size={20} color="#64748b" />
+          </TouchableOpacity>
+        </View>
+
+        {/* DATE PICKER */}
+        <DateTimePickerModal
+          isVisible={showDatePicker}
+          mode="date"
+          onConfirm={(date) => {
+            setDueDate(date);
+            setShowDatePicker(false);
+          }}
+          onCancel={() => setShowDatePicker(false)}
+        />
+
+        {/* CREATE BUTTON */}
+        <TouchableOpacity
+          onPress={handleCreateTask}
+          disabled={loading}
+          activeOpacity={0.8}
+          className={`py-4 rounded-full shadow-lg shadow-indigo-500/20 mb-10 ${loading ? "bg-indigo-800" : "bg-indigo-600"
+            }`}
+        >
+          <Text className="text-white text-center font-bold text-lg">
+            {loading ? "Creating..." : "Create Task"}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

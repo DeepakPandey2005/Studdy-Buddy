@@ -18,6 +18,21 @@ export const fetchTasks = createAsyncThunk(
   }
 );
 
+export const markStepDoneAsync = createAsyncThunk(
+  "tasks/markStepDoneAsync",
+  async (stepId) => {
+    const token = await getToken();
+    const res = await axios.patch(
+      `${Config.API_URL}/api/tasks/step/${stepId}/done`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return { stepId, data: res.data };
+  }
+);
+
 /* -------------------- SLICE -------------------- */
 const tasksSlice = createSlice({
   name: "tasks",
@@ -50,6 +65,16 @@ const tasksSlice = createSlice({
       })
       .addCase(fetchTasks.rejected, state => {
         state.loading = false;
+      })
+      .addCase(markStepDoneAsync.fulfilled, (state, action) => {
+        const { stepId } = action.payload;
+        for (const task of state.list) {
+          const step = task.steps.find(s => s._id === stepId);
+          if (step) {
+            step.isDone = true;
+            break;
+          }
+        }
       });
   },
 });

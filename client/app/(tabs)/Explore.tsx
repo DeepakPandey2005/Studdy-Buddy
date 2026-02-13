@@ -1,31 +1,41 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getUser, removeToken } from '../utils/token';
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 
 export default function Explore() {
   const router = useRouter();
+  const [username, setUsername] = useState('User');
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const u = await getUser();
+      setUsername(u || 'User');
+    }
+    fetchUser();
+  }, []);
 
   const menuItems = [
     {
       title: 'Settings',
       icon: 'settings-outline',
-      color: 'text-blue-400',
+      color: 'text-gray-400',
     },
     {
       title: 'Leaderboard',
       icon: 'trophy-outline',
-      color: 'text-yellow-400',
+      color: 'text-amber-400',
     },
     {
       title: 'Feedback',
       icon: 'chatbubble-ellipses-outline',
-      color: 'text-green-400',
+      color: 'text-indigo-400',
     },
     {
       title: 'Contact Developer',
       icon: 'mail-outline',
-      color: 'text-purple-400',
+      color: 'text-cyan-400',
     },
     {
       title: 'About Study Buddy',
@@ -36,44 +46,52 @@ export default function Explore() {
 
   const handleLogout = async () => {
     await removeToken(); // remove token and user info from store
-    router.replace('/login');
+    router.replace('/(auth)/login');
   };
 
   return (
-    <ScrollView className="flex-1 bg-gray-900 px-4 pt-6">
-      
-      {/* PROFILE CARD */}
-      <View className="bg-gray-800 rounded-3xl p-5 flex-row items-center mb-8">
-        
-        {/* Avatar */}
-        <View className="w-16 h-16 rounded-full bg-blue-500 items-center justify-center">
-          <Text className="text-white text-2xl font-bold">DP</Text>
-        </View>
+    <ScrollView className="flex-1 bg-gray-950 px-6 pt-12">
 
-        {/* User Info */}
-        <View className="ml-4 flex-1">
-          <Text className="text-white text-xl font-bold">
-            {getUser() || 'user'}
-          </Text>
-          <Text className="text-gray-400">
-            Consistency Level: 🔥 High
-          </Text>
+      <View className="items-center mb-10">
+        <View className="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 items-center justify-center mb-4 shadow-xl shadow-indigo-500/20 border-4 border-gray-900">
+          <Text className="text-white text-3xl font-bold">{username[0].toUpperCase()}</Text>
         </View>
+        <Text className="text-white text-2xl font-bold mb-1">
+          {username}
+        </Text>
+        <View className="bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+          <Text className="text-indigo-400 text-xs font-semibold">Scholar 🎓</Text>
+        </View>
+      </View>
 
-        <Ionicons name="chevron-forward" size={22} color="#9CA3AF" />
+      {/* STATS ROW */}
+      <View className="flex-row justify-between mb-8 bg-gray-900/50 p-4 rounded-3xl border border-gray-800">
+        <View className="items-center flex-1 border-r border-gray-800">
+          <Text className="text-gray-400 text-xs uppercase mb-1">Studied</Text>
+          <Text className="text-white text-xl font-bold">12h</Text>
+        </View>
+        <View className="items-center flex-1 border-r border-gray-800">
+          <Text className="text-gray-400 text-xs uppercase mb-1">Tasks</Text>
+          <Text className="text-white text-xl font-bold">5</Text>
+        </View>
+        <View className="items-center flex-1">
+          <Text className="text-gray-400 text-xs uppercase mb-1">Streak</Text>
+          <Text className="text-white text-xl font-bold">6🔥</Text>
+        </View>
       </View>
 
       {/* SECTION TITLE */}
-      <Text className="text-gray-400 text-sm mb-3 uppercase tracking-wider">
-        Explore
+      <Text className="text-gray-500 text-xs font-bold mb-4 uppercase tracking-widest ml-1">
+        Account
       </Text>
 
       {/* MENU OPTIONS */}
-      <View className="bg-gray-800 rounded-3xl overflow-hidden">
+      <View className="bg-gray-900 rounded-3xl overflow-hidden mb-8 border border-gray-800">
         {menuItems.map((item, index) => (
           <TouchableOpacity
             key={index}
-            className="flex-row items-center px-5 py-4 border-b border-gray-700 last:border-b-0"
+            className={`flex-row items-center px-5 py-5 ${index !== menuItems.length - 1 ? 'border-b border-gray-800' : ''}`}
+            activeOpacity={0.7}
           >
             <Ionicons
               name={item.icon as any}
@@ -81,14 +99,14 @@ export default function Explore() {
               className={item.color}
             />
 
-            <Text className="text-white text-base font-medium ml-4 flex-1">
+            <Text className="text-gray-200 text-base font-medium ml-4 flex-1">
               {item.title}
             </Text>
 
             <Ionicons
               name="chevron-forward"
-              size={20}
-              color="#9CA3AF"
+              size={18}
+              color="#4b5563"
             />
           </TouchableOpacity>
         ))}
@@ -97,19 +115,15 @@ export default function Explore() {
       {/* LOGOUT BUTTON */}
       <TouchableOpacity
         onPress={handleLogout}
-        className="mt-6 bg-red-600 rounded-3xl px-5 py-4 flex-row items-center justify-center"
+        activeOpacity={0.8}
+        className="mb-20 bg-red-500/10 border border-red-500/20 rounded-2xl px-5 py-4 flex-row items-center justify-center"
       >
-        <Ionicons name="log-out-outline" size={20} color="#fff" />
-        <Text className="text-white text-base font-medium ml-3">
-          Logout
+        <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+        <Text className="text-red-400 text-base font-semibold ml-3">
+          Sign Out
         </Text>
       </TouchableOpacity>
 
-      {/* FOOTER */}
-      <Text className="text-gray-500 text-center text-xs mt-10 mb-6">
-        Study Buddy v1.0 • Built with ❤️ for students
-      </Text>
-      
     </ScrollView>
   );
 }
