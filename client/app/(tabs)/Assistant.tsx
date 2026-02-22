@@ -7,6 +7,7 @@ import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-spe
 import axios from 'axios';
 
 import { Config } from '../../constants/Config';
+import { PremiumBackground } from '../components/PremiumBackground';
 
 interface Message {
   id: string;
@@ -170,84 +171,86 @@ export default function Assistant() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-950">
-      <View className="flex-row items-center justify-center py-4 border-b border-gray-800 bg-gray-950">
-        <Text className="text-white font-bold text-lg">AI Assistant</Text>
-      </View>
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-      >
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={item => item.id}
-          renderItem={renderMessage}
-          contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
-          className="flex-1"
-        />
-
-        {processing && (
-          <View className="px-6 pb-2">
-            <Text className="text-gray-500 text-xs italic ml-10">Thinking...</Text>
-          </View>
-        )}
-
-        {/* INPUT AREA */}
-        <View className="px-4 pb-6 pt-2 bg-gray-950 border-t border-gray-800">
-          <View className="flex-row items-center bg-gray-900 border border-gray-800 rounded-full px-2 py-1">
-            <TextInput
-              placeholder="Ask me anything..."
-              placeholderTextColor="#64748b"
-              className="flex-1 text-white px-4 py-3 text-base max-h-24"
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-            />
-
-            {inputText.length > 0 ? (
-              <TouchableOpacity
-                onPress={() => handleSend(inputText)}
-                className="w-10 h-10 bg-indigo-600 rounded-full items-center justify-center m-1"
-              >
-                <Ionicons name="arrow-up" size={24} color="white" />
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                onPress={toggleListening}
-                className={`w-10 h-10 rounded-full items-center justify-center m-1 ${listening ? 'bg-red-500' : 'bg-gray-700'}`}
-              >
-                <Ionicons name="mic" size={20} color="white" />
-              </TouchableOpacity>
-            )}
-          </View>
+    <PremiumBackground>
+      <SafeAreaView className="flex-1">
+        <View className="flex-row items-center justify-center py-4 border-b border-gray-800">
+          <Text className="text-white font-bold text-lg">AI Assistant</Text>
         </View>
 
-        {/* LISTENING OVERLAY */}
-        {listening && (
-          <View className="absolute inset-0 bg-black/80 items-center justify-center z-50">
-            <View className="items-center">
-              <View className="flex-row items-center space-x-4 mb-8 h-20">
-                <Animated.View style={{ transform: [{ scaleY: scaleAnim1 }] }} className="w-3 h-12 bg-blue-500 rounded-full mx-1" />
-                <Animated.View style={{ transform: [{ scaleY: scaleAnim2 }] }} className="w-3 h-20 bg-red-500 rounded-full mx-1" />
-                <Animated.View style={{ transform: [{ scaleY: scaleAnim3 }] }} className="w-3 h-16 bg-yellow-500 rounded-full mx-1" />
-                <Animated.View style={{ transform: [{ scaleY: scaleAnim4 }] }} className="w-3 h-10 bg-green-500 rounded-full mx-1" />
-              </View>
-              <Text className="text-white text-2xl font-bold mb-2">Listening...</Text>
-              <Text className="text-gray-400 text-base">Say something...</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          className="flex-1"
+          keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        >
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={item => item.id}
+            renderItem={renderMessage}
+            contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+            className="flex-1"
+          />
 
-              <TouchableOpacity
-                onPress={toggleListening}
-                className="mt-12 bg-gray-800 p-4 rounded-full border border-gray-700"
-              >
-                <Ionicons name="close" size={24} color="white" />
-              </TouchableOpacity>
+          {processing && (
+            <View className="px-6 pb-2">
+              <Text className="text-gray-500 text-xs italic ml-10">Thinking...</Text>
+            </View>
+          )}
+
+          {/* INPUT AREA */}
+          <View className="px-4 pb-6 pt-2 border-t border-gray-800">
+            <View className="flex-row items-center bg-gray-900 border border-gray-800 rounded-full px-2 py-1">
+              <TextInput
+                placeholder="Ask me anything..."
+                placeholderTextColor="#64748b"
+                className="flex-1 text-white px-4 py-3 text-base max-h-24"
+                value={inputText}
+                onChangeText={setInputText}
+                multiline
+              />
+
+              {inputText.length > 0 ? (
+                <TouchableOpacity
+                  onPress={() => handleSend(inputText)}
+                  className="w-10 h-10 bg-indigo-600 rounded-full items-center justify-center m-1"
+                >
+                  <Ionicons name="arrow-up" size={24} color="white" />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={toggleListening}
+                  className={`w-10 h-10 rounded-full items-center justify-center m-1 ${listening ? 'bg-red-500' : 'bg-gray-700'}`}
+                >
+                  <Ionicons name="mic" size={20} color="white" />
+                </TouchableOpacity>
+              )}
             </View>
           </View>
-        )}
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+          {/* LISTENING OVERLAY */}
+          {listening && (
+            <View className="absolute inset-0 bg-black/80 items-center justify-center z-50">
+              <View className="items-center">
+                <View className="flex-row items-center space-x-4 mb-8 h-20">
+                  <Animated.View style={{ transform: [{ scaleY: scaleAnim1 }] }} className="w-3 h-12 bg-blue-500 rounded-full mx-1" />
+                  <Animated.View style={{ transform: [{ scaleY: scaleAnim2 }] }} className="w-3 h-20 bg-red-500 rounded-full mx-1" />
+                  <Animated.View style={{ transform: [{ scaleY: scaleAnim3 }] }} className="w-3 h-16 bg-yellow-500 rounded-full mx-1" />
+                  <Animated.View style={{ transform: [{ scaleY: scaleAnim4 }] }} className="w-3 h-10 bg-green-500 rounded-full mx-1" />
+                </View>
+                <Text className="text-white text-2xl font-bold mb-2">Listening...</Text>
+                <Text className="text-gray-400 text-base">Say something...</Text>
+
+                <TouchableOpacity
+                  onPress={toggleListening}
+                  className="mt-12 bg-gray-800 p-4 rounded-full border border-gray-700"
+                >
+                  <Ionicons name="close" size={24} color="white" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </PremiumBackground>
   );
 }
