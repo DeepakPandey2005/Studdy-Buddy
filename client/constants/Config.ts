@@ -1,3 +1,3 @@
 export const Config = {
-  API_URL: 'http://192.168.0.107:5000',
+  API_URL: 'https://api.40.81.229.203.nip.io',
 };

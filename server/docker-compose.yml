@@ -12,6 +12,7 @@ services:
       - REDIS_HOST=redis-stack
     depends_on:
       - redis-stack
+    restart: always
 
   redis-stack:
     image: redis/redis-stack:latest
@@ -19,3 +20,4 @@ services:
     ports:
       - "6379:6379"
       - "8001:8001" # RedisInsight UI
+    restart: always

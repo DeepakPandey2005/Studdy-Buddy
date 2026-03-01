@@ -1,13 +1,16 @@
-import { View, Text, TouchableOpacity, ActivityIndicator, TextInput, FlatList, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, TextInput, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
-import { Animated } from 'react-native';
+import { Animated, Easing } from 'react-native';
 import * as Speech from 'expo-speech';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import axios from 'axios';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 
 import { Config } from '../../constants/Config';
 import { PremiumBackground } from '../components/PremiumBackground';
+
+const { width } = Dimensions.get('window');
 
 interface Message {
   id: string;
@@ -25,35 +28,34 @@ export default function Assistant() {
 
   const flatListRef = useRef<FlatList>(null);
 
-  // Animation values for listening indicator
-  const scaleAnim1 = useRef(new Animated.Value(1)).current;
-  const scaleAnim2 = useRef(new Animated.Value(1)).current;
-  const scaleAnim3 = useRef(new Animated.Value(1)).current;
-  const scaleAnim4 = useRef(new Animated.Value(1)).current;
+  // Animation values for 3D Listening Orb
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const floatAnim = useRef(new Animated.Value(0)).current;
 
-  // Pulse animation for mic
   useEffect(() => {
     if (listening) {
-      const pulse = (anim: Animated.Value, delay: number) => {
-        return Animated.loop(
-          Animated.sequence([
-            Animated.timing(anim, { toValue: 1.5, duration: 500, delay, useNativeDriver: true }),
-            Animated.timing(anim, { toValue: 1, duration: 500, useNativeDriver: true }),
-          ])
-        );
-      };
-
       Animated.parallel([
-        pulse(scaleAnim1, 0),
-        pulse(scaleAnim2, 200),
-        pulse(scaleAnim3, 400),
-        pulse(scaleAnim4, 600),
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(pulseAnim, { toValue: 1, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+            Animated.timing(pulseAnim, { toValue: 0, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          ])
+        ),
+        Animated.loop(
+          Animated.timing(rotateAnim, { toValue: 1, duration: 8000, easing: Easing.linear, useNativeDriver: true })
+        ),
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(floatAnim, { toValue: 1, duration: 2000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+            Animated.timing(floatAnim, { toValue: 0, duration: 2000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          ])
+        )
       ]).start();
     } else {
-      scaleAnim1.setValue(1);
-      scaleAnim2.setValue(1);
-      scaleAnim3.setValue(1);
-      scaleAnim4.setValue(1);
+      pulseAnim.setValue(0);
+      rotateAnim.setValue(0);
+      floatAnim.setValue(0);
     }
   }, [listening]);
 
@@ -75,7 +77,6 @@ export default function Assistant() {
     } else {
       const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
       if (!result.granted) return;
-      // Stop any current speech
       Speech.stop();
       ExpoSpeechRecognitionModule.start({ lang: 'en-US', interimResults: false, continuous: false });
     }
@@ -90,19 +91,15 @@ export default function Assistant() {
     setInputText('');
     setProcessing(true);
 
-    // Scroll to bottom
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
       const response = await axios.post(
         `${Config.API_URL}/api/generate/ai/response`,
-        { prompt: text } // Backend expects { prompt: "..." }
+        { prompt: text }
       );
 
-      // Backend returns stringified JSON: "{\"content\":\"...\"}"
-      // Or sometimes directly the content depending on previous edits
       let aiContent = "";
-
       if (typeof response.data === 'string') {
         try {
           const parsed = JSON.parse(response.data);
@@ -111,28 +108,16 @@ export default function Assistant() {
           aiContent = response.data;
         }
       } else if (typeof response.data === 'object') {
-        // If backend returns object directly
-        // Checks based on typical response { content: "..." } or nested
         const raw = response.data;
-        if (typeof raw === 'string') {
-          const parsed = JSON.parse(raw);
-          aiContent = parsed.content;
-        } else {
-          aiContent = raw.content || "I didn't understand that.";
-        }
+        aiContent = raw.content || (typeof raw === 'string' ? JSON.parse(raw).content : "I didn't understand that.");
       }
 
       const aiMsg: Message = { id: (Date.now() + 1).toString(), role: 'ai', text: aiContent };
       setMessages(prev => [...prev, aiMsg]);
 
-      // Speak the response if from voice
       if (fromVoice) {
-        // Stop any previous speech just in case
         Speech.stop();
-        Speech.speak(aiContent, {
-          // You can adjust rate/pitch here if needed
-          // rate: 1.1 
-        });
+        Speech.speak(aiContent);
       }
     } catch (error) {
       console.log("AI Error", error);
@@ -170,6 +155,26 @@ export default function Assistant() {
     );
   };
 
+  const rotation = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
+  });
+
+  const orbScale = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.2]
+  });
+
+  const orbOpacity = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.6, 1]
+  });
+
+  const translateY = floatAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -20]
+  });
+
   return (
     <PremiumBackground>
       <SafeAreaView className="flex-1">
@@ -178,9 +183,9 @@ export default function Assistant() {
         </View>
 
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
-          keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
         >
           <FlatList
             ref={flatListRef}
@@ -197,56 +202,106 @@ export default function Assistant() {
             </View>
           )}
 
-          {/* INPUT AREA */}
-          <View className="px-4 pb-6 pt-2 border-t border-gray-800">
-            <View className="flex-row items-center bg-gray-900 border border-gray-800 rounded-full px-2 py-1">
+          {/* INPUT AREA - WhatsApp style */}
+          <View className="px-4 pb-6 pt-2 bg-black/20 backdrop-blur-lg">
+            <View className="flex-row items-end bg-gray-900 border border-gray-800 rounded-[28px] px-2 py-1 shadow-2xl">
               <TextInput
                 placeholder="Ask me anything..."
                 placeholderTextColor="#64748b"
-                className="flex-1 text-white px-4 py-3 text-base max-h-24"
+                className="flex-1 text-white px-4 py-3 text-base max-h-32"
                 value={inputText}
                 onChangeText={setInputText}
                 multiline
               />
 
-              {inputText.length > 0 ? (
-                <TouchableOpacity
-                  onPress={() => handleSend(inputText)}
-                  className="w-10 h-10 bg-indigo-600 rounded-full items-center justify-center m-1"
-                >
-                  <Ionicons name="arrow-up" size={24} color="white" />
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  onPress={toggleListening}
-                  className={`w-10 h-10 rounded-full items-center justify-center m-1 ${listening ? 'bg-red-500' : 'bg-gray-700'}`}
-                >
-                  <Ionicons name="mic" size={20} color="white" />
-                </TouchableOpacity>
-              )}
+              <View className="flex-row items-center h-12 pr-1">
+                {inputText.length > 0 ? (
+                  <TouchableOpacity
+                    onPress={() => handleSend(inputText)}
+                    className="w-10 h-10 bg-indigo-600 rounded-full items-center justify-center"
+                  >
+                    <Ionicons name="arrow-up" size={24} color="white" />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={toggleListening}
+                    className={`w-10 h-10 rounded-full items-center justify-center ${listening ? 'bg-red-500' : 'bg-indigo-600/20 border border-indigo-500/30'}`}
+                  >
+                    <Ionicons name="mic" size={20} color={listening ? "white" : "#818cf8"} />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
 
-          {/* LISTENING OVERLAY */}
+          {/* 3D LISTENING OVERLAY */}
           {listening && (
-            <View className="absolute inset-0 bg-black/80 items-center justify-center z-50">
-              <View className="items-center">
-                <View className="flex-row items-center space-x-4 mb-8 h-20">
-                  <Animated.View style={{ transform: [{ scaleY: scaleAnim1 }] }} className="w-3 h-12 bg-blue-500 rounded-full mx-1" />
-                  <Animated.View style={{ transform: [{ scaleY: scaleAnim2 }] }} className="w-3 h-20 bg-red-500 rounded-full mx-1" />
-                  <Animated.View style={{ transform: [{ scaleY: scaleAnim3 }] }} className="w-3 h-16 bg-yellow-500 rounded-full mx-1" />
-                  <Animated.View style={{ transform: [{ scaleY: scaleAnim4 }] }} className="w-3 h-10 bg-green-500 rounded-full mx-1" />
+            <View className="absolute inset-0 bg-black/90 items-center justify-center z-50">
+              <Animated.View style={{ transform: [{ translateY }] }} className="items-center">
+                <View className="relative w-64 h-64 items-center justify-center">
+                  {/* Glow Layers */}
+                  <Animated.View 
+                    style={{ 
+                      transform: [{ scale: orbScale }, { rotate: rotation }],
+                      opacity: orbOpacity 
+                    }} 
+                    className="absolute"
+                  >
+                    <Svg width={240} height={240}>
+                      <Defs>
+                        <RadialGradient id="grad" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                          <Stop offset="0%" stopColor="#6366f1" stopOpacity="0.8" />
+                          <Stop offset="70%" stopColor="#818cf8" stopOpacity="0.3" />
+                          <Stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+                        </RadialGradient>
+                      </Defs>
+                      <Circle cx="120" cy="120" r="100" fill="url(#grad)" />
+                    </Svg>
+                  </Animated.View>
+
+                  {/* Inner 3D-ish Orb */}
+                  <Animated.View 
+                    style={{ 
+                      transform: [{ scale: orbScale }]
+                    }} 
+                    className="w-32 h-32 rounded-full overflow-hidden shadow-2xl"
+                  >
+                    <View className="w-full h-full bg-indigo-600 items-center justify-center">
+                      <Ionicons name="mic" size={60} color="white" />
+                      {/* Reflection highlight */}
+                      <View className="absolute top-2 left-6 w-12 h-6 bg-white/30 rounded-full rotate-[-30deg]" />
+                    </View>
+                  </Animated.View>
+                  
+                  {/* Outer Rings */}
+                  <Animated.View 
+                    style={{ 
+                      transform: [{ scale: Animated.multiply(orbScale, 1.4) }, { rotate: rotation }],
+                      opacity: 0.3
+                    }} 
+                    className="absolute border-2 border-dashed border-indigo-400 w-48 h-48 rounded-full"
+                  />
+                  <Animated.View 
+                    style={{ 
+                      transform: [{ scale: Animated.multiply(orbScale, 1.8) }, { rotate: rotation }],
+                      opacity: 0.1
+                    }} 
+                    className="absolute border border-indigo-400 w-56 h-56 rounded-full"
+                  />
                 </View>
-                <Text className="text-white text-2xl font-bold mb-2">Listening...</Text>
-                <Text className="text-gray-400 text-base">Say something...</Text>
+
+                <View className="mt-12 items-center">
+                  <Text className="text-white text-3xl font-black mb-2 tracking-tight">Listening...</Text>
+                  <Text className="text-indigo-300/60 text-lg font-medium">I'm all ears, talk to me</Text>
+                </View>
 
                 <TouchableOpacity
                   onPress={toggleListening}
-                  className="mt-12 bg-gray-800 p-4 rounded-full border border-gray-700"
+                  className="mt-20 w-16 h-16 bg-white/10 rounded-full border border-white/20 items-center justify-center"
                 >
-                  <Ionicons name="close" size={24} color="white" />
+                  <Ionicons name="close" size={32} color="white" />
                 </TouchableOpacity>
-              </View>
+              </Animated.View>
             </View>
           )}
         </KeyboardAvoidingView>
