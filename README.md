@@ -142,8 +142,8 @@ The backend is deployed on an **Azure Virtual Machine** using:
 ## 1️⃣ Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/study-buddy.git
-cd study-buddy
+git clone https://github.com/deepakpandey2005/studdy-buddy.git
+cd studdy-buddy
 ```
 
 ---
