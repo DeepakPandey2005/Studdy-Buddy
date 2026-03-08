@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ActivityIndicator, TextInput, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, TextInput, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, Dimensions, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing } from 'react-native';
@@ -58,6 +58,13 @@ export default function Assistant() {
       floatAnim.setValue(0);
     }
   }, [listening]);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    });
+    return () => showSubscription.remove();
+  }, []);
 
   /* ================= SPEECH RECOGNITION ================= */
   useSpeechRecognitionEvent('start', () => setListening(true));
@@ -183,9 +190,9 @@ export default function Assistant() {
         </View>
 
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : "padding"}
           className="flex-1"
-          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
         >
           <FlatList
             ref={flatListRef}
@@ -194,6 +201,7 @@ export default function Assistant() {
             renderItem={renderMessage}
             contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
             className="flex-1"
+            keyboardShouldPersistTaps="handled"
           />
 
           {processing && (
@@ -240,11 +248,11 @@ export default function Assistant() {
               <Animated.View style={{ transform: [{ translateY }] }} className="items-center">
                 <View className="relative w-64 h-64 items-center justify-center">
                   {/* Glow Layers */}
-                  <Animated.View 
-                    style={{ 
+                  <Animated.View
+                    style={{
                       transform: [{ scale: orbScale }, { rotate: rotation }],
-                      opacity: orbOpacity 
-                    }} 
+                      opacity: orbOpacity
+                    }}
                     className="absolute"
                   >
                     <Svg width={240} height={240}>
@@ -260,10 +268,10 @@ export default function Assistant() {
                   </Animated.View>
 
                   {/* Inner 3D-ish Orb */}
-                  <Animated.View 
-                    style={{ 
+                  <Animated.View
+                    style={{
                       transform: [{ scale: orbScale }]
-                    }} 
+                    }}
                     className="w-32 h-32 rounded-full overflow-hidden shadow-2xl"
                   >
                     <View className="w-full h-full bg-indigo-600 items-center justify-center">
@@ -272,20 +280,20 @@ export default function Assistant() {
                       <View className="absolute top-2 left-6 w-12 h-6 bg-white/30 rounded-full rotate-[-30deg]" />
                     </View>
                   </Animated.View>
-                  
+
                   {/* Outer Rings */}
-                  <Animated.View 
-                    style={{ 
+                  <Animated.View
+                    style={{
                       transform: [{ scale: Animated.multiply(orbScale, 1.4) }, { rotate: rotation }],
                       opacity: 0.3
-                    }} 
+                    }}
                     className="absolute border-2 border-dashed border-indigo-400 w-48 h-48 rounded-full"
                   />
-                  <Animated.View 
-                    style={{ 
+                  <Animated.View
+                    style={{
                       transform: [{ scale: Animated.multiply(orbScale, 1.8) }, { rotate: rotation }],
                       opacity: 0.1
-                    }} 
+                    }}
                     className="absolute border border-indigo-400 w-56 h-56 rounded-full"
                   />
                 </View>

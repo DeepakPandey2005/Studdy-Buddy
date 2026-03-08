@@ -36,16 +36,13 @@ This project was developed as a **Semester 6 Project**.
 
 # 🎥 App Demo
 
-Example:
+<img src="assets/demo.gif" width="250"/>
 
-```md
-![Study Buddy Demo](assets/demo.gif)
-```
 # 📱 Download APK
 
 <p align="center">
 
-[![Download APK](https://img.shields.io/badge/Download-Android%20APK-green?style=for-the-badge\&logo=android)](APK_LINK_HERE)
+[![Download APK](https://img.shields.io/badge/Download-Android%20APK-green?style=for-the-badge\&logo=android)](https://github.com/DeepakPandey2005/Studdy-Buddy/releases/download/v1.0/application-e715f7a2-d1ed-4969-930c-2f0b89c147f3.apk)
 
 </p>
 
@@ -243,5 +240,4 @@ This project is licensed under the **MIT License**.
 
 <img src="assets/assistant.png" width="250"/>
 <img src="assets/reminder.png" width="250"/>
-
 </p>
